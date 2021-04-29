@@ -6,6 +6,9 @@ import {
     FlatList,
     ActivityIndicator
 } from 'react-native';
+import { useNavigation } from '@react-navigation/core';
+
+import { PlantProps } from '../libs/storage';
 
 import { Header } from '../components/Header';
 import { EnviromentButton } from '../components/Enviroment';
@@ -21,29 +24,17 @@ interface EnviromentProps {
     title: string;
 }
 
-interface PlantsProps {
-    id: string
-    name: string;
-    about: string;
-    water_tips: string;
-    photo: string;
-    environments: [string];
-    frequency: {
-    times: number;
-    repeat_every: string;
-    }
-}
-
 export function PlantSelect() {
     const [enviroments, setEnviroments] = useState<EnviromentProps[]>([]);
-    const [plants, setPlants] = useState<PlantsProps[]>([]);
-    const [filteredPlants, setFilteredPlants] = useState<PlantsProps[]>([]);
+    const [plants, setPlants] = useState<PlantProps[]>([]);
+    const [filteredPlants, setFilteredPlants] = useState<PlantProps[]>([]);
     const [enviromentSelected, setEnviromentSelected] = useState('all');
     const [loading, setLoading] = useState(true);
 
     const [page, setPage] = useState(1);
     const [loadingMore, setLoadingMore] = useState(false);
-    const [loadedAll, setLoadedAll] = useState(false);
+
+    const navigation = useNavigation();
 
     function handleEnviromentSelected(enviroment: string){
         setEnviromentSelected(enviroment)
@@ -93,6 +84,10 @@ export function PlantSelect() {
         fetchPlants();
     }
 
+    function handlePlantSelect(plant: PlantProps) {
+        navigation.navigate('PlantSave', { plant });
+    }
+
     useEffect(() => {
         async function fetchEnviroment() {
             const { data } = await api.get('plants_environments?_sort=title&_order=asc');
@@ -135,9 +130,9 @@ export function PlantSelect() {
                     showsHorizontalScrollIndicator={false}
                     contentContainerStyle={styles.enviromentList}
                     data={enviroments}                
+                    keyExtractor={(item) => String(item.key)}
                     renderItem={({ item }) => (
                         <EnviromentButton
-                            key={item.key}
                             title={item.title}
                             active={item.key === enviromentSelected}
                             onPress={() => handleEnviromentSelected(item.key)}
@@ -148,10 +143,12 @@ export function PlantSelect() {
 
             <View style={styles.plants}>
                 <FlatList 
+                    keyExtractor={(item) => String(item.id)}
                     data={filteredPlants}
                     renderItem={({ item }) => (
                         <PlantCardPrimary 
                             data={item}
+                            onPress={() => handlePlantSelect(item)}
                         />
                         )}
                     showsVerticalScrollIndicator={false}
@@ -199,6 +196,7 @@ const styles = StyleSheet.create({
     },
     plants: {
         flex:1,
+        height: 500,
         paddingHorizontal: 32,
         justifyContent: 'center'
     },

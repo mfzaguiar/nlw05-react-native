@@ -17,11 +17,11 @@ import wateringImg from '../assets/watering.png';
 
 export function Welcome() {
     const navigation = useNavigation();
-
+   
     function handleStart() {
         navigation.navigate('UserIdentification');
     }
-    
+
     return(
         <SafeAreaView style={styles.container}>
             <View style={styles.wrapper}>

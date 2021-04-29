@@ -4,15 +4,17 @@ import {
     View,
     Text,
     Image,
-    FlatList
+    FlatList,
+    Alert
  } from 'react-native';
  import { Header } from '../components/Header';
  import { formatDistance } from 'date-fns';
  import { pt } from 'date-fns/locale';
 
  import { PlantCardSecondary } from '../components/PlantCardSecondary';
+ import { Load } from '../components/Load';
  
- import { loadPlant, PlantProps } from '../libs/storage';
+ import { loadPlant, PlantProps, removePlant } from '../libs/storage';
 
  import waterImg from '../assets/waterdrop.png';
  
@@ -24,9 +26,39 @@ import fonts from '../../styles/fonts';
     const [loading, setLoading] = useState(true);
     const [nextWaterd, setNextWaterd] = useState<string>();
 
+    function handleRemove(plant: PlantProps) {
+        Alert.alert('Remover', `Deseja remover a ${plant.name}?`, [
+            {
+                text: 'Não 😮',
+                style: 'cancel'
+            },
+            {
+                text: 'Sim 😥',
+                onPress: async () => {
+                    try {
+                        await removePlant(plant.id);
+
+                        setMyPlants((oldData) => (
+                            oldData.filter((item) => item.id !== plant.id)
+                        ));
+
+                    } catch (error) {
+                        Alert.alert('Não foi possível remover! 😥')
+                    }
+                }
+            }
+        ])
+    }
+
     useEffect(() => {
         async function loadStorageData() {
             const plantsStorage = await loadPlant();
+
+            if(plantsStorage.length <= 0) {
+                setNextWaterd('Não há plantas para regar');
+                setLoading(false);
+                return
+            }
 
             const nextTime = formatDistance(
                 new Date(plantsStorage[0].dateTimeNotification).getTime(),
@@ -44,6 +76,12 @@ import fonts from '../../styles/fonts';
 
         loadStorageData();
     },[])
+
+    if(loading) {
+        return(
+            <Load />
+        )
+    }
 
      return (
         <View style={styles.container}>
@@ -68,7 +106,10 @@ import fonts from '../../styles/fonts';
                     data={myPlants}
                     keyExtractor={(item) => String(item.id)}
                     renderItem={({ item }) => (
-                        <PlantCardSecondary data={item} />
+                        <PlantCardSecondary 
+                            data={item} 
+                            handleRemove={() => handleRemove(item)}
+                        />
                     )}
                     showsVerticalScrollIndicator={false}
                     contentContainerStyle={{ flex: 1 }}
